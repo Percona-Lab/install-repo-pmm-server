@@ -66,7 +66,7 @@
 
     - name: Install supervisord
       include_role:
-        name: supervisord-init
+        name: roles/supervisord-init
 
     - name: Install RPMs               | Install RPMs for PMM2 server
       yum:
