@@ -1,0 +1,125 @@
+---
+    - name: Packages                   | Add PMM2 Server YUM repository
+      yum_repository:
+        name: pmm2-server
+        description: PMM Server YUM repository - x86_64
+        baseurl: https://repo.percona.com/pmm2-components/yum/{{ pmm2_server_repo }}/7/RPMS/x86_64/
+        gpgcheck: yes
+        enabled: yes
+        gpgkey: file:///etc/pki/rpm-gpg/PERCONA-PACKAGING-KEY
+
+    # local yum repo for building of pmm server docker image in autobuild jobs
+    - name: PMM                        | Add local YUM repository
+      yum_repository:
+        name: local
+        description: Local YUM repository - x86_64
+        baseurl: file:///tmp/RPMS
+        gpgcheck: no
+        enabled: no
+
+    - name: Packages                   | Install OS tools
+      yum:
+        name:
+          - python2-pip
+          - rsync
+
+    - name: Create users for non-docker images          | Create users
+      user:
+        name: "pmm"
+      when: ansible_virtualization_type != "docker"
+
+    - name: Add user to group         | Add the user 'postgres' to group 'pmm'
+      user:
+        name: postgres
+        groups: pmm
+        append: yes
+
+    - name: Create directories        | Create dirs
+      file: path={{ item }} state=directory owner=pmm group=pmm
+      with_items:
+        - /srv/prometheus/data
+        - /srv/prometheus/rules
+        - /srv/alertmanager/data
+
+    - name: Create directories        | Create dirs
+      file:
+        path: /srv/logs
+        state: directory
+        owner: pmm
+        group: pmm
+        mode: '0775'
+
+    - name: PostgresDB                | Create Postgres log file
+      file:
+        path: /srv/logs/postgresql.log
+        state: touch
+        force: yes
+        group: postgres
+        owner: postgres
+        mode: 0644
+
+    - name: Create dirs                | Create dirs
+      file: path={{ item }} state=directory
+      with_items:
+        - /var/lib/cloud/scripts/per-once
+        - /var/lib/cloud/scripts/per-boot
+
+    - name: Install supervisord
+      include_role:
+        name: supervisord-init
+
+    - name: Install RPMs               | Install RPMs for PMM2 server
+      yum:
+        name:
+          - percona-grafana
+          - percona-victoriametrics
+          - percona-qan-api2
+          - percona-dashboards
+          - percona-alertmanager
+          - pmm-server
+          - pmm-managed
+          - pmm-update
+          - dbaas-controller
+          - dbaas-tools
+          - pmm-dump
+        state: installed
+        # line below is sed'ed by build-server-docker script
+        enablerepo: "pmm2-server"
+
+    - name: PMM                        | Enable repo for pmm2-client
+      command: percona-release enable {{ pmm_client_repos }}
+
+    - name: Install RPMs               | Install pmm2-client rpm
+      yum:
+        name:
+          - pmm2-client
+        state: installed
+        enablerepo: "{{ pmm_client_repo_name }}"
+
+    - name: Disable pmm-agent service | Disable pmm-agent
+      when: ansible_virtualization_type != "docker"
+      service: name=pmm-agent state=stopped enabled=no
+
+    - name: Supervisord               | Remove supervisord block from pmm.ini
+      when: ansible_virtualization_type != "docker"
+      ini_file:
+        path: /etc/supervisord.d/pmm.ini
+        section: supervisord
+        state: absent
+
+    - name: Create tmp dirs           | Create tmp dirs
+      when: ansible_virtualization_type != "docker"
+      command: /usr/bin/systemd-tmpfiles --create --remove --boot --exclude-prefix=/dev
+
+    - name: Disable pmm-update-perform-init for build time
+      ini_file:
+        path: /etc/supervisord.d/pmm.ini
+        section: program:pmm-update-perform-init
+        option: autostart
+        value: "false"
+
+    - name: Copy grafana.ini file for the first run
+      copy:
+        src: grafana.ini
+        dest: /etc/supervisord.d/grafana.ini
+        mode: '0644'
