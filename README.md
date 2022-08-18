@@ -2,6 +2,8 @@
 
 ## THIS IS NOT SUPPORTED WAY TO INSTALL PMM SERVER
 
+Ansible scripts to install PMM Server on RedHat 7
+
 ```
 git clone https://github.com/Percona-Lab/install-repo-pmm-server
 
