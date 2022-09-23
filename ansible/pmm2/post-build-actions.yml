@@ -39,9 +39,11 @@
         dest: /srv/pmm-distribution
 
     - name: Disable repo               | Disable testing repo for pmm2-client
+      when: air_gapped == "false"
       command: percona-release disable {{ pmm_client_repos }}
 
     - name: Enable repo                | Enable release repo for pmm2-client
+      when: air_gapped == "false"
       command: percona-release enable {{ pmm_client_repos_final }}
 
     - name: pmm-agent                  | Setup pmm-agent

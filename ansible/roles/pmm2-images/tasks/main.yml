@@ -3,19 +3,18 @@
       yum_repository:
         name: pmm2-server
         description: PMM Server YUM repository - x86_64
-        baseurl: https://repo.percona.com/pmm2-components/yum/{{ pmm2_server_repo }}/7/RPMS/x86_64/
+        baseurl: "{{ pmm2_server_repo }}"
         gpgcheck: yes
         enabled: yes
         gpgkey: file:///etc/pki/rpm-gpg/PERCONA-PACKAGING-KEY
 
-    # local yum repo for building of pmm server docker image in autobuild jobs
-    - name: PMM                        | Add local YUM repository
+    - name: Packages                   | Add EPEL YUM repository
+      when: (ansible_os_family == 'RedHat' and air_gapped == "true")
       yum_repository:
-        name: local
-        description: Local YUM repository - x86_64
-        baseurl: file:///tmp/RPMS
-        gpgcheck: no
-        enabled: no
+        name: epel
+        description: EPEL YUM repository - x86_64
+        baseurl: "{{ epel_repo }}"
+        enabled: yes
 
     - name: Packages                   | Install OS tools
       yum:
@@ -87,7 +86,18 @@
         enablerepo: "pmm2-server"
 
     - name: PMM                        | Enable repo for pmm2-client
+      when: air_gapped == "false"
       command: percona-release enable {{ pmm_client_repos }}
+
+    - name: Packages                   | Add PMM2 local client YUM repository
+      when: air_gapped == "true"
+      yum_repository:
+        name: "{{ pmm_client_repo_name }}"
+        description: PMM client YUM repository
+        baseurl: "{{ pmm2_client_repo }}"
+        gpgcheck: yes
+        enabled: yes
+        gpgkey: file:///etc/pki/rpm-gpg/PERCONA-PACKAGING-KEY
 
     - name: Install RPMs               | Install pmm2-client rpm
       yum:

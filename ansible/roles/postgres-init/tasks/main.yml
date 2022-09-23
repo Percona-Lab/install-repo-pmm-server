@@ -1,15 +1,23 @@
 ---
 # Initialize Postgres
     - name: Packages                   | Install percona-release rpm
+      when: air_gapped == "false"
       yum:
         name: https://repo.percona.com/yum/percona-release-latest.noarch.rpm
         state: installed
+
+    - name: Key                        | install rpm key
+      when: air_gapped == "true"
+      copy:
+        src: PERCONA-PACKAGING-KEY
+        dest: /etc/pki/rpm-gpg/PERCONA-PACKAGING-KEY
+        mode: '0644'
 
     - name: Postgres                   | Add PostgreSQL YUM repository
       yum_repository:
         name: percona-ppg-11
         description: PostgreSQL YUM repository - x86_64
-        baseurl: http://repo.percona.com/ppg-11/yum/{{ ppg_repo_name }}/7/RPMS/x86_64
+        baseurl: "{{ pg_repo }}"
         gpgcheck: yes
         enabled: yes
         gpgkey: file:///etc/pki/rpm-gpg/PERCONA-PACKAGING-KEY
