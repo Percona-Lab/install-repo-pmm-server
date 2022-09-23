@@ -1,6 +1,19 @@
 ---
-pmm2_server_repo: release
+pmm2_server_repo: "https://repo.percona.com/pmm2-components/yum/release/7/RPMS/x86_64/"
+pg_repo: "http://repo.percona.com/ppg-11/yum/release/7/RPMS/x86_64"
+epel_repo: "https://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-14.noarch.rpm"
+
 pmm_client_repos: "original testing"
 
 # line below is sed'ed by build-server-docker script
 pmm_client_repo_name: "percona-testing-x86_64"
+
+
+# install from local repos in air gapped environments
+air_gapped: "false"
+#pmm2_server_repo: "file:///var/local/repos/pmm"
+#pg_repo: "file:///var/local/repos/pg"
+#epel_repo: "file:///var/local/repos/epel"
+
+# when: air_gapped: "true", later in task
+pmm2_client_repo: "file:///var/local/repos/pmm2_client"
