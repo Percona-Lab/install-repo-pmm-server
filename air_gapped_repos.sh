@@ -1,5 +1,7 @@
 #/bin/bash
 
+yum install -y yum-utils
+
 #### download needed repos
 
 yum-config-manager --add-repo=https://repo.percona.com/pmm2-components/yum/release/7/RPMS/x86_64/
@@ -24,5 +26,3 @@ reposync --download-metadata --norepopath -n -p /var/local/repos/epel --repoid=e
 
 ### Or run ansible like:
 # ansible-playbook -v -e air_gapped=true -e pmm2_server_repo="file:///var/local/repos/pmm" -e pg_repo="file:///var/local/repos/pg" -e epel_repo="file:///var/local/repos/epel" -e pmm2_client_repo="file:///var/local/repos/pmm2_client" -i 'localhost,' -c local pmm2-docker/main.yml
-
-# ansible-playbook -v -e air_gapped=true -e pmm2_server_repo="file:///home/dkondratenko/Workspace/github/install-repo-pmm-server/repo/pmm" -e pg_repo="file:///home/dkondratenko/Workspace/github/install-repo-pmm-server/repo/pg" -e epel_repo="file:///home/dkondratenko/Workspace/github/install-repo-pmm-server/repo/epel" -e pmm2_client_repo="file:///home/dkondratenko/Workspace/github/install-repo-pmm-server/repo/pmm2_client" -i 'localhost,' -c local pmm2-docker/main.yml
